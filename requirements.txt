@@ -1,0 +1,40 @@
+# Core web crawling dependencies
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+scrapy>=2.11.0
+aiohttp>=3.8.0
+
+# Database related
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+alembic>=1.12.0
+
+# Image processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Configuration management
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# Logging and monitoring
+loguru>=0.7.0
+
+# Utility libraries
+click>=8.1.0
+tqdm>=4.66.0
+fake-useragent>=1.4.0
+
+# Web API
+fastapi>=0.110.0
+uvicorn>=0.22.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Optional: Machine learning for image classification
+scikit-learn>=1.3.0
+numpy>=1.24.0

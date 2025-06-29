@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片爬虫控制面板</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图片爬虫控制面板</h1>
+            <p>输入一个网址，启动爬虫，并实时监控其状态。</p>
+        </header>
+
+        <main>
+            <div class="control-panel">
+                <h2>启动新的爬取任务</h2>
+                <div class="input-group">
+                    <input type="text" id="url-input" placeholder="https://example.com">
+                    <button id="start-crawl-btn">开始爬取</button>
+                </div>
+                <p id="error-message" class="error-text"></p>
+            </div>
+
+            <div class="status-panel">
+                <h2>系统状态</h2>
+                <div class="status-overview">
+                    <p><strong>爬虫状态:</strong> <span id="crawl-status">空闲</span></p>
+                    <p><strong>当前目标:</strong> <span id="current-target">无</span></p>
+                    <p><strong>数据库状态:</strong> <span id="db-status">未知</span></p>
+                    <p><strong>高可用状态:</strong> <span id="ha-status">未知</span></p>
+                    <p><strong>当前数据库:</strong> <span id="current-database">未知</span></p>
+                    <p><strong>数据库连接:</strong> <span id="db-connection">未知</span></p>
+                </div>
+                <div class="logs-container">
+                    <h3>实时日志:</h3>
+                    <pre id="logs-output">等待任务启动...</pre>
+                </div>
+            </div>
+
+            <!-- 数据库管理面板 -->
+            <div class="db-management-panel">
+                <h2>🗄️ 数据库高可用管理</h2>
+
+                <!-- 数据库节点状态 -->
+                <div class="db-nodes-section">
+                    <h3>数据库节点状态</h3>
+                    <div id="db-nodes-container">
+                        <div class="loading">正在加载数据库状态...</div>
+                    </div>
+                </div>
+
+                <!-- 故障转移控制 -->
+                <div class="failover-controls">
+                    <h3>故障转移演示</h3>
+                    <div class="control-buttons">
+                        <button id="refresh-ha-status" class="btn btn-info">
+                            🔄 刷新状态
+                        </button>
+                        <button id="manual-failover-btn" class="btn btn-warning" disabled>
+                            ⚡ 手动故障转移
+                        </button>
+                        <button id="force-sync-btn" class="btn btn-success">
+                            📤 强制数据同步
+                        </button>
+                        <button id="simulate-failure-btn" class="btn btn-danger">
+                            💥 模拟数据库故障
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 操作日志 -->
+                <div class="operation-logs">
+                    <h3>操作日志</h3>
+                    <div id="ha-logs-container">
+                        <div class="log-entry info">
+                            <span class="timestamp">[系统启动]</span>
+                            <span class="message">高可用数据库管理系统就绪</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-panel">
+                <h2>图片库</h2>
+                <div class="gallery-actions">
+                    <button id="refresh-gallery-btn">刷新列表</button>
+                    <button id="select-all-btn">全选</button>
+                    <button id="delete-selected-btn">删除选中</button>
+                </div>
+                <div id="image-gallery" class="image-gallery">
+                    <!-- 图片将在这里动态加载 -->
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Image Crawler v1.0.0</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

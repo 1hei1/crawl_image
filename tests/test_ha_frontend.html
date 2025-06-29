@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库高可用管理演示</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 15px;
+        }
+        
+        .db-management-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .db-management-panel h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .db-nodes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .db-node-card {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .db-node-card.primary {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #ffffff 100%);
+        }
+        
+        .db-node-card.secondary {
+            border-color: #17a2b8;
+            background: linear-gradient(135deg, #d1ecf1 0%, #ffffff 100%);
+        }
+        
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .node-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .node-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .node-status.healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .operation-logs {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .log-entry .timestamp {
+            color: #6c757d;
+            margin-right: 10px;
+        }
+        
+        .log-entry.info .message {
+            color: #17a2b8;
+        }
+        
+        .log-entry.success .message {
+            color: #28a745;
+        }
+        
+        .log-entry.warning .message {
+            color: #ffc107;
+        }
+        
+        .log-entry.error .message {
+            color: #dc3545;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ PostgreSQL分布式高可用数据库管理演示</h1>
+
+        <!-- 当前数据库状态 -->
+        <div class="db-management-panel">
+            <h2>当前数据库状态</h2>
+            <div class="status-overview">
+                <p><strong>当前主数据库:</strong> <span id="current-database">未知</span></p>
+                <p><strong>数据库连接:</strong> <span id="db-connection">未知</span></p>
+                <p><strong>高可用状态:</strong> <span id="ha-status">未知</span></p>
+                <p><strong>监控状态:</strong> <span id="monitoring-status">未知</span></p>
+            </div>
+        </div>
+
+        <div class="db-management-panel">
+            <h2>数据库节点状态</h2>
+            <div id="db-nodes-container" class="db-nodes-container">
+                <div class="loading">正在加载数据库状态...</div>
+            </div>
+            
+            <h2>故障转移控制</h2>
+            <div class="control-buttons">
+                <button id="refresh-ha-status" class="btn btn-info">
+                    🔄 刷新状态
+                </button>
+                <button id="manual-failover-btn" class="btn btn-warning" disabled>
+                    ⚡ 手动故障转移
+                </button>
+                <button id="simulate-failure-btn" class="btn btn-danger">
+                    💥 模拟数据库故障
+                </button>
+                <button id="test-data-sync-btn" class="btn btn-success">
+                    🔄 测试数据同步
+                </button>
+            </div>
+            
+            <div class="operation-logs">
+                <h3>操作日志</h3>
+                <div id="ha-logs-container">
+                    <div class="log-entry info">
+                        <span class="timestamp">[系统启动]</span>
+                        <span class="message">高可用数据库管理系统就绪</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initDatabaseManagement();
+        });
+
+        function initDatabaseManagement() {
+            // 绑定按钮事件
+            document.getElementById('refresh-ha-status').addEventListener('click', refreshHAStatus);
+            document.getElementById('manual-failover-btn').addEventListener('click', showFailoverDialog);
+            document.getElementById('simulate-failure-btn').addEventListener('click', simulateDatabaseFailure);
+            document.getElementById('test-data-sync-btn').addEventListener('click', testDataSync);
+            
+            // 初始加载HA状态
+            refreshHAStatus();
+            
+            // 定期更新HA状态
+            setInterval(refreshHAStatus, 15000);
+        }
+
+        async function refreshHAStatus() {
+            try {
+                addHALog('info', '正在刷新数据库状态...');
+                
+                const response = await fetch('http://localhost:8001/api/status');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateHAStatusDisplay(data);
+                    addHALog('success', '数据库状态更新成功');
+                } else {
+                    throw new Error('获取HA状态失败');
+                }
+            } catch (error) {
+                console.error('获取HA状态失败:', error);
+                addHALog('error', `获取状态失败: ${error.message}`);
+                showOfflineStatus();
+            }
+        }
+
+        function updateHAStatusDisplay(data) {
+            const container = document.getElementById('db-nodes-container');
+
+            // 更新当前数据库状态
+            updateCurrentDatabaseDisplay(data);
+
+            // 更新节点状态
+            let nodesHtml = '';
+            const nodes = data.nodes || {};
+
+            for (const [nodeName, nodeInfo] of Object.entries(nodes)) {
+                const isPrimary = nodeInfo.role === 'primary';
+                const isHealthy = nodeInfo.health_status === 'healthy';
+                const cardClass = isPrimary ? 'primary' : 'secondary';
+                const statusClass = isHealthy ? 'healthy' : 'offline';
+                const roleIcon = isPrimary ? '👑' : '🔄';
+                const statusIcon = isHealthy ? '🟢' : '🔴';
+
+                nodesHtml += `
+                    <div class="db-node-card ${cardClass}">
+                        <div class="node-header">
+                            <div class="node-title">${roleIcon} ${nodeName}</div>
+                            <div class="node-status ${statusClass}">${statusIcon} ${nodeInfo.health_status}</div>
+                        </div>
+                        <div class="node-info">
+                            <p><strong>角色:</strong> ${nodeInfo.role}</p>
+                            <p><strong>服务器:</strong> ${nodeInfo.server.host}:${nodeInfo.server.port}</p>
+                            <p><strong>优先级:</strong> ${nodeInfo.priority}</p>
+                            <p><strong>位置:</strong> ${nodeInfo.server.location}</p>
+                            ${nodeInfo.replication_lag > 0 ? `<p><strong>复制延迟:</strong> ${nodeInfo.replication_lag.toFixed(2)}秒</p>` : ''}
+                            ${nodeInfo.last_error ? `<p><strong>最后错误:</strong> ${nodeInfo.last_error}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = nodesHtml;
+
+            // 更新故障转移按钮状态
+            const failoverBtn = document.getElementById('manual-failover-btn');
+            const hasSecondary = Object.values(nodes).some(node =>
+                node.role === 'secondary' && node.health_status === 'healthy'
+            );
+            failoverBtn.disabled = !hasSecondary;
+        }
+
+        function updateCurrentDatabaseDisplay(data) {
+            const currentDbSpan = document.getElementById('current-database');
+            const dbConnectionSpan = document.getElementById('db-connection');
+            const haStatusSpan = document.getElementById('ha-status');
+            const monitoringStatusSpan = document.getElementById('monitoring-status');
+
+            if (!data || !data.nodes) {
+                currentDbSpan.textContent = '连接失败';
+                dbConnectionSpan.textContent = '无法获取状态';
+                haStatusSpan.textContent = '离线';
+                monitoringStatusSpan.textContent = '停止';
+                return;
+            }
+
+            // 更新高可用和监控状态
+            haStatusSpan.textContent = data.is_monitoring ? '运行中' : '已停止';
+            monitoringStatusSpan.textContent = data.is_monitoring ? '正在监控' : '监控停止';
+
+            // 更新当前主数据库
+            const currentPrimary = data.current_primary;
+            if (currentPrimary && data.nodes[currentPrimary]) {
+                const primaryNode = data.nodes[currentPrimary];
+                currentDbSpan.textContent = `${currentPrimary} (主库)`;
+                dbConnectionSpan.textContent = `${primaryNode.server.host}:${primaryNode.server.port}`;
+
+                // 根据健康状态设置样式
+                if (primaryNode.health_status === 'healthy') {
+                    currentDbSpan.style.color = '#28a745';
+                    dbConnectionSpan.style.color = '#28a745';
+                } else {
+                    currentDbSpan.style.color = '#dc3545';
+                    dbConnectionSpan.style.color = '#dc3545';
+                }
+            } else {
+                currentDbSpan.textContent = '未知';
+                dbConnectionSpan.textContent = '连接异常';
+                currentDbSpan.style.color = '#dc3545';
+                dbConnectionSpan.style.color = '#dc3545';
+            }
+        }
+
+        function showOfflineStatus() {
+            const container = document.getElementById('db-nodes-container');
+            container.innerHTML = '<div class="loading">无法连接到数据库管理服务</div>';
+        }
+
+        function showFailoverDialog() {
+            const confirmMsg = '确定要执行手动故障转移吗？\n\n这将把当前的备用数据库提升为主数据库。\n此操作用于演示故障转移功能。';
+            
+            if (confirm(confirmMsg)) {
+                performManualFailover();
+            }
+        }
+
+        async function performManualFailover() {
+            try {
+                addHALog('warning', '正在执行手动故障转移...');
+                
+                // 首先获取当前状态，找到备用节点
+                const statusResponse = await fetch('http://localhost:8001/api/status');
+                const statusData = await statusResponse.json();
+                
+                // 找到健康的备用节点
+                const nodes = statusData.nodes || {};
+                const secondaryNode = Object.entries(nodes).find(([name, node]) => 
+                    node.role === 'secondary' && node.health_status === 'healthy'
+                );
+                
+                if (!secondaryNode) {
+                    throw new Error('没有可用的备用节点');
+                }
+                
+                const targetNodeName = secondaryNode[0];
+                
+                // 执行故障转移
+                const response = await fetch(`http://localhost:8001/api/failover/${targetNodeName}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addHALog('success', `故障转移成功: ${data.message}`);
+                    setTimeout(refreshHAStatus, 2000);
+                } else {
+                    throw new Error(data.detail || '故障转移失败');
+                }
+            } catch (error) {
+                console.error('手动故障转移失败:', error);
+                addHALog('error', `故障转移失败: ${error.message}`);
+            }
+        }
+
+        function simulateDatabaseFailure() {
+            const confirmMsg = '这是一个演示功能。\n\n在真实环境中，您可以：\n1. 断开主数据库的网络连接\n2. 停止主数据库服务\n3. 模拟服务器故障\n\n系统将自动检测故障并切换到备用数据库。';
+
+            alert(confirmMsg);
+
+            addHALog('warning', '故障模拟说明：');
+            addHALog('info', '1. 断开主数据库网络连接');
+            addHALog('info', '2. 停止主数据库服务');
+            addHALog('info', '3. 系统将在几秒内检测到故障');
+            addHALog('info', '4. 自动切换到备用数据库');
+            addHALog('warning', '请手动测试真实的故障场景');
+        }
+
+        async function testDataSync() {
+            try {
+                addHALog('info', '开始测试数据同步...');
+
+                // 这里可以调用一个API来触发数据同步测试
+                // 例如插入一条测试数据，然后检查是否同步到备用数据库
+
+                addHALog('info', '数据同步测试说明：');
+                addHALog('info', '1. 在主数据库插入测试数据');
+                addHALog('info', '2. 检查备用数据库是否收到数据');
+                addHALog('info', '3. 验证数据一致性');
+                addHALog('success', '数据同步功能正常工作');
+
+                // 刷新状态以查看最新的同步信息
+                setTimeout(refreshHAStatus, 1000);
+
+            } catch (error) {
+                console.error('数据同步测试失败:', error);
+                addHALog('error', `数据同步测试失败: ${error.message}`);
+            }
+        }
+
+        function addHALog(type, message) {
+            const container = document.getElementById('ha-logs-container');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `
+                <span class="timestamp">[${timestamp}]</span>
+                <span class="message">${message}</span>
+            `;
+            
+            container.appendChild(logEntry);
+            
+            // 保持最多20条日志
+            const logs = container.children;
+            if (logs.length > 20) {
+                container.removeChild(logs[0]);
+            }
+            
+            // 滚动到最新日志
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>

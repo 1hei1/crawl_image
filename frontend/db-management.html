@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库管理 - 图片爬虫系统</title>
+    <link rel="stylesheet" href="/static/style.css?v=20241227">
+    <link rel="stylesheet" href="/static/db-management.css?v=20241227">
+    <script src="/static/db-management.js?v=20241227" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗄️ 数据库管理系统</h1>
+            <p>管理图片爬虫系统的所有数据表，支持增删改查操作</p>
+            <nav class="nav-links">
+                <a href="/" class="nav-link">← 返回主页</a>
+                <a href="#" id="refresh-stats" class="nav-link">🔄 刷新统计</a>
+            </nav>
+        </header>
+
+        <main>
+            <!-- 数据库统计面板 -->
+            <div class="stats-panel">
+                <h2>📊 数据库统计</h2>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="loading">正在加载统计信息...</div>
+                </div>
+            </div>
+
+            <!-- 表选择面板 -->
+            <div class="table-selector-panel">
+                <h2>📋 选择数据表</h2>
+                <div class="table-buttons" id="table-buttons">
+                    <div class="loading">正在加载表信息...</div>
+                </div>
+            </div>
+
+            <!-- 数据操作面板 -->
+            <div class="data-panel" id="data-panel" style="display: none;">
+                <div class="panel-header">
+                    <h2 id="current-table-title">数据表管理</h2>
+                    <div class="panel-controls">
+                        <button id="add-record-btn" class="btn btn-success">➕ 新增记录</button>
+                        <button id="refresh-data-btn" class="btn btn-info">🔄 刷新数据</button>
+                        <div class="search-box">
+                            <input type="text" id="search-input" placeholder="搜索...">
+                            <button id="search-btn" class="btn btn-secondary">🔍</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据表格 -->
+                <div class="table-container">
+                    <table id="data-table" class="data-table">
+                        <thead id="table-header">
+                            <!-- 动态生成表头 -->
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- 动态生成表格内容 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控件 -->
+                <div class="pagination-container">
+                    <div class="pagination-info" id="pagination-info">
+                        <!-- 分页信息 -->
+                    </div>
+                    <div class="pagination-controls" id="pagination-controls">
+                        <!-- 分页按钮 -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 模态框：新增/编辑记录 -->
+    <div id="record-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">新增记录</h3>
+                <span class="close" id="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="record-form">
+                    <div id="form-fields">
+                        <!-- 动态生成表单字段 -->
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-btn">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：确认删除 -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>确认删除</h3>
+                <span class="close" id="delete-modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这条记录吗？此操作将设置记录状态为已删除。</p>
+                <div class="form-actions">
+                    <button id="confirm-delete-btn" class="btn btn-danger">确认删除</button>
+                    <button id="cancel-delete-btn" class="btn btn-secondary">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="message-container" class="message-container">
+        <!-- 动态生成消息 -->
+    </div>
+</body>
+</html>

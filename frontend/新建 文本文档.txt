@@ -1,0 +1,156 @@
+我来为您列出image_crawler数据库中所有表的详细结构。让我先查看数据库模型定义和迁移文件来获取完整的表结构信息。
+
+Augment Context Engine
+数据库表结构定义，包括所有字段、数据类型、约束、索引、外键关系的完整信息
+现在让我查看更多关于表结构的信息，包括索引和约束：
+
+Read directory
+migrations
+database
+Read file
+001_initial_schema.py
+database/migrations
+📊 image_crawler 数据库所有表结构
+基于代码分析，以下是 image_crawler 数据库中所有表的完整结构：
+
+🗂️ 1. categories（分类表）
+字段名	数据类型	约束	默认值	说明
+id	INTEGER	PRIMARY KEY, AUTO_INCREMENT	-	主键ID
+created_at	DATETIME(timezone=True)	NOT NULL	now()	创建时间
+updated_at	DATETIME(timezone=True)	NOT NULL	now()	更新时间
+status	VARCHAR(20)	NOT NULL	'active'	状态：active/inactive/deleted
+name	VARCHAR(100)	NOT NULL, UNIQUE	-	分类名称
+slug	VARCHAR(100)	NOT NULL, UNIQUE	-	分类标识符
+description	TEXT	NULL	-	分类描述
+parent_id	INTEGER	NULL, FK(categories.id)	-	父分类ID
+level	INTEGER	NULL	0	分类层级（0为顶级）
+sort_order	INTEGER	NULL	0	排序顺序
+auto_rules	TEXT	NULL	-	自动分类规则（JSON格式）
+keywords	TEXT	NULL	-	关键词列表（JSON格式）
+image_count	INTEGER	NULL	0	包含图片数量
+total_size	INTEGER	NULL	0	总文件大小（字节）
+color	VARCHAR(7)	NULL	-	分类颜色（十六进制）
+icon	VARCHAR(50)	NULL	-	分类图标
+is_visible	VARCHAR(10)	NULL	'true'	是否可见
+索引：
+
+idx_categories_parent_id ON (parent_id)
+外键约束：
+
+parent_id → categories.id
+🖼️ 2. images（图片表）
+字段名	数据类型	约束	默认值	说明
+id	INTEGER	PRIMARY KEY, AUTO_INCREMENT	-	主键ID
+created_at	DATETIME(timezone=True)	NOT NULL	now()	创建时间
+updated_at	DATETIME(timezone=True)	NOT NULL	now()	更新时间
+status	VARCHAR(20)	NOT NULL	'active'	状态：active/inactive/deleted
+url	VARCHAR(2048)	NOT NULL	-	图片原始URL
+source_url	VARCHAR(2048)	NOT NULL	-	图片来源页面URL
+filename	VARCHAR(255)	NOT NULL	-	文件名
+original_filename	VARCHAR(255)	NULL	-	原始文件名
+file_extension	VARCHAR(10)	NOT NULL	-	文件扩展名
+mime_type	VARCHAR(50)	NULL	-	MIME类型
+file_size	INTEGER	NULL	-	文件大小（字节）
+width	INTEGER	NULL	-	图片宽度（像素）
+height	INTEGER	NULL	-	图片高度（像素）
+aspect_ratio	FLOAT	NULL	-	宽高比
+color_mode	VARCHAR(20)	NULL	-	颜色模式（RGB、RGBA、L等）
+has_transparency	BOOLEAN	NULL	FALSE	是否有透明通道
+md5_hash	VARCHAR(32)	UNIQUE	-	MD5哈希值
+sha256_hash	VARCHAR(64)	NULL	-	SHA256哈希值
+perceptual_hash	VARCHAR(64)	NULL	-	感知哈希值（用于相似图片检测）
+category_id	INTEGER	NULL, FK(categories.id)	-	分类ID
+tags	TEXT	NULL	-	标签（JSON格式存储）
+auto_tags	TEXT	NULL	-	自动生成的标签
+local_path	VARCHAR(512)	NULL	-	本地存储路径
+is_downloaded	BOOLEAN	NULL	FALSE	是否已下载
+download_attempts	INTEGER	NULL	0	下载尝试次数
+last_download_error	TEXT	NULL	-	最后一次下载错误信息
+quality_score	FLOAT	NULL	-	图片质量评分（0-1）
+is_duplicate	BOOLEAN	NULL	FALSE	是否为重复图片
+duplicate_of	INTEGER	NULL, FK(images.id)	-	重复的原图ID
+exif_data	TEXT	NULL	-	EXIF数据（JSON格式）
+alt_text	TEXT	NULL	-	图片alt文本
+title	VARCHAR(255)	NULL	-	图片标题
+description	TEXT	NULL	-	图片描述
+索引：
+
+idx_images_url ON (url)
+idx_images_source_url ON (source_url)
+idx_images_filename ON (filename)
+idx_images_category_id ON (category_id)
+idx_images_is_downloaded ON (is_downloaded)
+idx_images_created_at ON (created_at)
+外键约束：
+
+category_id → categories.id
+duplicate_of → images.id
+🏷️ 3. tags（标签表）
+字段名	数据类型	约束	默认值	说明
+id	INTEGER	PRIMARY KEY, AUTO_INCREMENT	-	主键ID
+created_at	DATETIME(timezone=True)	NOT NULL	now()	创建时间
+updated_at	DATETIME(timezone=True)	NOT NULL	now()	更新时间
+status	VARCHAR(20)	NOT NULL	'active'	状态：active/inactive/deleted
+name	VARCHAR(255)	NOT NULL, UNIQUE	-	标签名称
+slug	VARCHAR(255)	NOT NULL, UNIQUE	-	标签标识符
+description	TEXT	NULL	-	标签描述
+group_name	VARCHAR(255)	NULL	-	标签分组
+tag_type	VARCHAR(255)	NULL	'manual'	标签类型：manual-手动，auto-自动
+usage_count	INTEGER	NULL	0	使用次数
+color	VARCHAR(255)	NULL	-	标签颜色
+唯一约束：
+
+UNIQUE(name)
+UNIQUE(slug)
+📋 4. crawl_sessions（爬取会话表）
+字段名	数据类型	约束	默认值	说明
+id	INTEGER	PRIMARY KEY, AUTO_INCREMENT	-	主键ID
+created_at	DATETIME(timezone=True)	NOT NULL	now()	创建时间
+updated_at	DATETIME(timezone=True)	NOT NULL	now()	更新时间
+status	VARCHAR(20)	NOT NULL	'pending'	执行状态：pending/running/completed/failed/cancelled
+session_name	VARCHAR(100)	NULL	-	会话名称
+target_url	VARCHAR(2048)	NOT NULL	-	目标网站URL
+session_type	VARCHAR(20)	NULL	'manual'	会话类型：manual-手动，scheduled-定时
+config_data	JSON	NULL	-	爬取配置（JSON格式）
+max_depth	INTEGER	NULL	3	最大爬取深度
+max_images	INTEGER	NULL	-	最大图片数量限制
+allowed_domains	TEXT	NULL	-	允许的域名列表
+image_filters	JSON	NULL	-	图片过滤规则
+start_time	DATETIME(timezone=True)	NULL	-	开始时间
+end_time	DATETIME(timezone=True)	NULL	-	结束时间
+duration_seconds	FLOAT	NULL	-	执行时长（秒）
+total_pages	INTEGER	NULL	0	总页面数
+processed_pages	INTEGER	NULL	0	已处理页面数
+total_images_found	INTEGER	NULL	0	发现的图片总数
+images_downloaded	INTEGER	NULL	0	成功下载的图片数
+images_failed	INTEGER	NULL	0	下载失败的图片数
+images_skipped	INTEGER	NULL	0	跳过的图片数
+total_size_bytes	INTEGER	NULL	0	下载总大小（字节）
+average_image_size	FLOAT	NULL	-	平均图片大小（字节）
+download_speed_mbps	FLOAT	NULL	-	平均下载速度（MB/s）
+high_quality_count	INTEGER	NULL	0	高质量图片数量
+duplicate_count	INTEGER	NULL	0	重复图片数量
+error_count	INTEGER	NULL	0	错误数量
+last_error	TEXT	NULL	-	最后一个错误信息
+error_log	TEXT	NULL	-	错误日志
+summary_log	TEXT	NULL	-	执行摘要
+peak_memory_mb	FLOAT	NULL	-	峰值内存使用（MB）
+cpu_usage_percent	FLOAT	NULL	-	CPU使用率（%）
+索引：
+
+idx_crawl_sessions_target_url ON (target_url)
+idx_crawl_sessions_status ON (status)
+🔗 表关系总结
+categories ↔ categories：自引用关系（parent_id → id）
+images → categories：多对一关系（category_id → categories.id）
+images ↔ images：自引用关系（duplicate_of → id）
+crawl_sessions → images：一对多关系（通过业务逻辑关联）
+images ↔ tags：多对多关系（通过JSON字段存储）
+📈 数据库特性
+支持时区的时间戳：所有时间字段都使用 DATETIME(timezone=True)
+软删除机制：通过 status 字段实现
+JSON数据支持：配置和标签使用JSON格式存储
+完整性约束：外键约束确保数据一致性
+性能优化：关键字段建立索引
+去重机制：MD5哈希值唯一约束防止重复图片
+这个数据库设计支持完整的图片爬虫功能，包括分层分类、标签管理、重复检测、会话跟踪和性能监控。
